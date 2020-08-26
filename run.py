@@ -3,7 +3,7 @@ from config import create_config
 import pygame
 import os
 import sys
-from player import Player
+from player import Player, MagicBall
 
 
 class Game(object):
@@ -30,7 +30,9 @@ class Game(object):
         self.tps_clock = pygame.time.Clock()
         self.tps_delta = 0.0
         self.player = Player(self)
+        self.magic_ball = MagicBall(self)
 
+        # Run main loop
         self.run()
 
     def run(self):
@@ -42,9 +44,6 @@ class Game(object):
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         sys.exit(0)
-                    if event.key == pygame.K_SPACE:
-                        print('xd')
-
 
             # Ticking
             self.tps_delta += self.tps_clock.tick() / 1000.0
@@ -53,17 +52,17 @@ class Game(object):
                 self.tps_delta -= 1 / self.tps
 
             # Drawing
-            self.screen.fill((0, 0, 0))
             self.draw()
-            pygame.display.flip()
 
     def tick(self):
         self.player.tick()
-        pass
+        self.magic_ball.tick()
 
     def draw(self):
         self.screen.blit(self.background, (0, 0))
         self.player.draw()
+        self.magic_ball.draw()
+        pygame.display.flip()
 
 
 Game()
