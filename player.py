@@ -6,17 +6,18 @@ import os
 class Player:
     def __init__(self, game):
         self.game = game
+        self.map = self.game.game_map
         # Player
         self.player_image = pygame.image.load('game_assets/player.png')
         self.player_size = [self.game.width//10, self.game.width//10]
         self.player_image = pygame.transform.scale(self.player_image, (self.player_size[0], self.player_size[1]))
         self.player_location = [50, 50]
-        self.player_location = Vector2(self.game.width / 2, self.game.height - self.player_size[1])
+        # self.player_location = Vector2(self.game.width / 2, self.game.height - self.player_size[1])
 
         # Rectangles
         self.player_rect = pygame.Rect(self.player_location[0], self.player_location[1],
                                        self.player_size[0], self.player_size[1])
-        self.test_rect = pygame.Rect(100, 100, 200, 200)
+        self.test_rect = pygame.Rect(100, 150, 30, 30)
 
         # Physics
         self.on_jump = False
@@ -44,7 +45,10 @@ class Player:
         self.left = False
         self.right = False
         self.walk_count = 0
-        # self.ball = MagicBall(self, game)
+        self.collide_left = False
+        self.collide_right = False
+        self.collide_top = False
+        self.collide_bottom = False
 
     def tick(self):
         self.move()
@@ -91,9 +95,21 @@ class Player:
                 # Zamiana na ground point lub collision check
                 self.on_jump = False
 
+        # Map objects collision
+        collisions = self.map.move(self.player_rect, self.vel)
+
+        if collisions['bottom']:
+            self.player_location[1] = 0
+        if collisions['top']:
+            self.vel[1] = 0
+        if collisions['left']:
+            self.vel[0] = 0
+        if collisions['right']:
+            self.vel[0] = 0
+
         # Staying on the ground - player don't fall under the screen
-        if self.player_location[1] > self.game.height - self.player_size[1]:
-            self.player_location[1] = self.game.height - self.player_size[1]
+        # if self.player_location[1] > self.game.height - self.player_size[1]:
+        #     self.player_location[1] = self.game.height - self.player_size[1]
 
         # Player hitbox position
         self.player_rect.x = self.player_location[0]

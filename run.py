@@ -4,6 +4,7 @@ import pygame
 import os
 import sys
 from player import Player, MagicBall
+from game_map import GameMap
 
 
 class Game(object):
@@ -29,6 +30,7 @@ class Game(object):
         self.screen = pygame.display.set_mode(self.resolution)
         self.tps_clock = pygame.time.Clock()
         self.tps_delta = 0.0
+        self.game_map = GameMap(self)
         self.player = Player(self)
         self.magic_ball = MagicBall(self)
 
@@ -55,11 +57,13 @@ class Game(object):
             self.draw()
 
     def tick(self):
+        self.game_map.tick()
         self.player.tick()
         self.magic_ball.tick()
 
     def draw(self):
         self.screen.blit(self.background, (0, 0))
+        self.game_map.draw()
         self.player.draw()
         self.magic_ball.draw()
         pygame.display.flip()
