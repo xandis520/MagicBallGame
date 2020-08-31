@@ -53,17 +53,17 @@ class Game(object):
                 self.tick()
                 self.tps_delta -= 1 / self.tps
 
-            # Drawing
-            self.draw()
+                # Drawing
+                self.draw()
 
     def tick(self):
-        self.game_map.tick()
+        # self.game_map.tick(self.player.camera_scroll)
         self.player.tick()
         self.magic_ball.tick()
 
     def draw(self):
         self.screen.blit(self.background, (0, 0))
-        self.game_map.draw()
+        # self.game_map.draw(self.player.camera_scroll) # tutaj trzeba przekazac wartosc self.player.camera_scroll
         self.player.draw()
         self.magic_ball.draw()
         pygame.display.flip()
