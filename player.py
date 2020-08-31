@@ -2,6 +2,7 @@ import pygame
 from pygame.math import Vector2
 import os
 from game_map import GameMap
+import math
 
 
 class Player:
@@ -90,26 +91,31 @@ class Player:
 
     def map_collision(self):
         self.collision_types = {'top': False, 'bottom': False, 'right': False, 'left': False}
-        self.player_rect.x += self.vel[0]
+        self.player_location[0] += self.vel[0]
+        self.player_rect.x = self.player_location[0]
         hit_list = self.collision_check()
         for tile in hit_list:
             if self.vel[0] > 0:
-                self.player_rect.right = tile.left
+                self.player_location[0] = tile.left - self.player_size[0]
+                self.player_rect.x = self.player_location[0]
                 self.collision_types['right'] = True
             elif self.vel[0] < 0:
-                self.player_rect.left = tile.right
+                self.player_location[0] = tile.right
+                self.player_rect.x = self.player_location[0]
                 self.collision_types['left'] = True
-        self.player_rect.y += self.vel[1]
+
+        self.player_location[1] += self.vel[1]
+        self.player_rect.y = self.player_location[1]
         hit_list = self.collision_check()
         for tile in hit_list:
             if self.vel[1] > 0:
                 #     Tu jest błąd lub nizej. Gdy kolizja jest z podłogą, a postać ma velocity nizsze od 0 to teleportuje postac ciagle  w lewa strone
-                print("True")
-                print(self.vel)
-                self.player_rect.bottom = tile.top
+                self.player_location[1] = tile.top - self.player_size[1]
+                self.player_rect.y = self.player_location[1]
                 self.collision_types['bottom'] = True
             elif self.vel[1] < 0:
-                self.player_rect.top = tile.bottom
+                self.player_location[1] = tile.bottom
+                self.player_rect.y = self.player_location[1]
                 self.collision_types['top'] = True
 
     def collision_check(self):
@@ -120,6 +126,8 @@ class Player:
         return hit_list
 
     def move(self):
+        print('1loc:', self.player_location[0])
+        print('1:', self.vel[0])
         # Input
         pressed = pygame.key.get_pressed()
         if pressed[pygame.K_d]:
@@ -146,20 +154,16 @@ class Player:
                 self.add_force(Vector2(0, -self.jump_speed))
 
         # Physics
-        # self.vel *= self.air_resistance  # Działanie oporu powietrza
-        # self.vel += Vector2(0, self.gravity)  # Działanie grawitacji
-        # self.vel += self.acceleration  # Działanie przyspieszenia nadanego przez gracza
+        self.vel *= self.air_resistance  # Działanie oporu powietrza
+        self.vel += Vector2(0, self.gravity)  # Działanie grawitacji
+        self.vel += self.acceleration  # Działanie przyspieszenia nadanego przez gracza
+        # if not self.left and not self.right:
+        #     if math.fabs(self.vel[0]) < 0.1:
+        #         self.vel[0] = 0
         # self.player_location += self.vel  # Aktualizacja pozycji gracza
-        # if self.vel[0] < 0.001 or self.vel[0] > -0.001:
-        #     self.vel[0] = 0
-        if self.left:
-            self.vel[0] -= 2
-        elif self.right:
-            self.vel[0] += 2
-        else:
-            self.vel[0] = 0
-        # self.acceleration *= 0  # Reset przyspieszenia
-
+        self.acceleration *= 0  # Reset przyspieszenia
+        print('2loc:', self.player_location[0])
+        print('2:', self.vel[0])
 
         # Collision with game map tiles
         self.map_collision()
@@ -174,17 +178,17 @@ class Player:
                 self.on_jump = False
 
             # Postać przyspiesza po odbiciu i szybciej spada w dół
-            if self.collision_types['top']:
-                if self.left:
-                    self.vel += Vector2(2, 0)
-                if self.right:
-                    self.vel += Vector2(-2, 0)
-                self.vel += Vector2(0, 5)
+            # if self.collision_types['top']:
+            #     if self.left:
+            #         self.vel += Vector2(2, 0)
+            #     if self.right:
+            #         self.vel += Vector2(-2, 0)
+            #     self.vel += Vector2(0, 5)
 
         # Staying on the ground - player don't fall under the screen
-        if self.player_rect.y > self.game.height - self.player_size[1]:
-            self.player_rect.y = self.game.height - self.player_size[1]
-            self.on_jump = False
+        # if self.player_rect.y > self.game.height - self.player_size[1]:
+        #     self.player_rect.y = self.game.height - self.player_size[1]
+        #     self.on_jump = False
 
         # if self.player_location[1] > self.game.height - self.player_size[1]:
         #     self.player_location[1] = self.game.height - self.player_size[1]
@@ -196,8 +200,11 @@ class Player:
 
         # Player position after collision check
         self.tiles()
-        self.player_location[0] = self.player_rect.x
-        self.player_location[1] = self.player_rect.y
+        # self.player_location = Vector2(self.player_rect.x, self.player_rect.y)
+        self.player_rect.x = self.player_location[0]
+        self.player_rect.y = self.player_location[1]
+        print('3loc:', self.player_location[0])
+        print('3:', self.vel[0])
 
     def draw(self):
         # Drawing player hitbox
