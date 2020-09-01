@@ -1,0 +1,53 @@
+1.Game _init_
+    config data
+    screen initialization
+    GameMap(self)
+        _init
+    Player(self)
+        _init_
+    MagicBall(self)
+        _init_
+    def run()
+2. Run
+    Main loop
+        exit events
+        Ticking
+        Drawing
+3. Ticking
+    player.tick
+        def move()
+            input
+                keys
+                walk direction, count and jump define
+                def add_force()
+                    acceleration_MOVEMENT
+            physics
+                velocity
+                    * air_resistance
+                    + gravity
+                    + acceleration
+                player_location += velocity //Skreślić
+                acceleration = 0
+            def map_collision()
+                collision_types
+                player_rect += velocity x axis
+                hit_list = collision tile list
+                    updating player_rect x axis
+                    updating collision types left and right
+                hit_list = collision tile list
+                    updating player_rect y axis
+                    updating collision types top and bottom
+
+            updating player location by player rect location
+
+
+
+
+    game_map.tick
+    magic_ball.tick
+4. Draw
+    background
+    game_map.draw
+    player.draw
+    magic_ball.draw
+    display.flip

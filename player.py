@@ -24,11 +24,12 @@ class Player:
 
         # Physics
         self.on_jump = False
-        self.walk_speed = 1
+        self.walk_speed = 0.8
         self.jump_speed = 50
         self.gravity = 1.5
         self.air_resistance = 0.9
-        self.vel = Vector2(0, 0) # Parametr przechowujący aktualną prędkość obiektu
+        self.friction = 0.8
+        self.vel = Vector2(0, 0) # Parametr przechowujący aktualną prędkość obiektu (składowa wszystkich sił)
         self.acceleration = Vector2(0, 0)
 
         #  Moving animation
@@ -58,6 +59,7 @@ class Player:
         self.dirt_img = pygame.transform.scale(self.dirt_img, (32, 32))
         self.game_map = self.load_map('map')
         self.tile_rects = []
+        self.scroll_x = 0
 
     def load_map(self, map_name):
         with open(map_name + '.txt', 'r') as map:
@@ -71,8 +73,8 @@ class Player:
 
     def tick(self):
         self.move()
-        # self.camera_scroll[0] = (self.player_rect.x - self.camera_scroll[0] - self.game.width//2)
-        # self.camera_scroll += Vector2(scroll_x, 0)
+        # self.scroll_x = -self.scroll_x//1 + self.player_location[0]//1
+        # self.camera_scroll = Vector2(self.scroll_x, 0)
         # Camera movement
 
     def tiles(self):
@@ -157,13 +159,13 @@ class Player:
         self.vel *= self.air_resistance  # Działanie oporu powietrza
         self.vel += Vector2(0, self.gravity)  # Działanie grawitacji
         self.vel += self.acceleration  # Działanie przyspieszenia nadanego przez gracza
-        # if not self.left and not self.right:
-        #     if math.fabs(self.vel[0]) < 0.1:
-        #         self.vel[0] = 0
-        # self.player_location += self.vel  # Aktualizacja pozycji gracza
         self.acceleration *= 0  # Reset przyspieszenia
-        print('2loc:', self.player_location[0])
-        print('2:', self.vel[0])
+        if not self.left and not self.right:
+            if math.fabs(self.vel[0]) < 0.1:
+                self.vel[0] = 0
+            if self.collision_types['bottom']:
+                self.vel[0] *= self.friction
+
 
         # Collision with game map tiles
         self.map_collision()
@@ -178,12 +180,12 @@ class Player:
                 self.on_jump = False
 
             # Postać przyspiesza po odbiciu i szybciej spada w dół
-            # if self.collision_types['top']:
-            #     if self.left:
-            #         self.vel += Vector2(2, 0)
-            #     if self.right:
-            #         self.vel += Vector2(-2, 0)
-            #     self.vel += Vector2(0, 5)
+            if self.collision_types['top']:
+                if self.left:
+                    self.vel += Vector2(2, 0)
+                if self.right:
+                    self.vel += Vector2(-2, 0)
+                self.vel = Vector2(0, 5)
 
         # Staying on the ground - player don't fall under the screen
         # if self.player_rect.y > self.game.height - self.player_size[1]:
