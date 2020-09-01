@@ -12,10 +12,13 @@ class Player:
         self.map = self.game.game_map
         # Player
         self.player_size = [self.game.width//10, self.game.width//10]
+        self.player_size = [70, 70]
         self.player_image = pygame.image.load('game_assets/player.png')
         self.player_image = pygame.transform.scale(self.player_image, (self.player_size[0], self.player_size[1]))
-        self.player_location = [50, 0] # Player run location
-        # self.player_location = Vector2(self.game.width // 2, self.game.height - self.player_size[1])
+        start_x = (self.game.width - self.player_size[0])//2
+        start_y = self.game.height - self.player_size[1] - 50
+        start_y = 0
+        self.player_location = [start_x, start_y] # Player run location
 
         # Rectangles
         self.player_rect = pygame.Rect(self.player_location[0], self.player_location[1],
@@ -26,7 +29,7 @@ class Player:
         self.on_jump = False
         self.walk_speed = 0.8
         self.jump_speed = 50
-        self.gravity = 1.5
+        self.gravity = 1.3
         self.air_resistance = 0.9
         self.friction = 0.8
         self.vel = Vector2(0, 0) # Parametr przechowujący aktualną prędkość obiektu (składowa wszystkich sił)
@@ -52,21 +55,27 @@ class Player:
         self.collision_types = {'top': False, 'bottom': False, 'right': False, 'left': False}
 
         # Player camera
-        self.camera_scroll = Vector2(0, 0)
+        self.scroll_x = self.player_rect.x -self.game.width//2 + self.player_size[0]//2
+        self.camera_scroll = Vector2(self.scroll_x, 0)
+
+        # Map
         self.grass_img = pygame.image.load('game_assets/grass.png')
         self.grass_img = pygame.transform.scale(self.grass_img, (32, 32))
         self.dirt_img = pygame.image.load('game_assets/dirt.png')
         self.dirt_img = pygame.transform.scale(self.dirt_img, (32, 32))
         self.game_map = self.load_map('map')
         self.tile_rects = []
-        self.scroll_x = 0
 
+        # Sounds
+        self.jump_sound = pygame.mixer.Sound('game_assets/sounds/jump.wav')
+        self.music_rise = True
+        self.volume = 0.3
     def load_map(self, map_name):
         with open(map_name + '.txt', 'r') as map:
             data = map.read()
 
         data = data.split('\n')
-        game_map =[]
+        game_map = []
         for row in data:
             game_map.append(list(row))
         return game_map
@@ -74,8 +83,24 @@ class Player:
     def tick(self):
         self.move()
         # self.scroll_x = -self.scroll_x//1 + self.player_location[0]//1
-        # self.camera_scroll = Vector2(self.scroll_x, 0)
-        # Camera movement
+        self.camera_scroll[0] += (self.player_rect.x - self.camera_scroll[0]-self.game.width//2 + self.player_size[0]//2)//8
+        self.camera_scroll[1] += (self.player_rect.y - self.camera_scroll[1] - self.game.height//2 + self.player_size[1]//2)//22
+
+        # if self.music_rise:
+        #     if self.volume <= 0.5:
+        #         self.volume += 0.001
+        #     else:
+        #         self.music_rise = False
+        # else:
+        #     self.music_rise = False
+        #
+        # if not self.music_rise:
+        #     if self.volume >= 0.1:
+        #         self.volume -= 0.001
+        #     else:
+        #         self.music_rise = True
+        # print(self.volume)
+        # pygame.mixer.music.set_volume(self.volume)
 
     def tiles(self):
         self.tile_rects = []
@@ -84,7 +109,7 @@ class Player:
             x = 0
             for tile in layer:
                 if tile != '0':
-                    self.tile_rects.append(pygame.Rect(x * 32 - self.camera_scroll[0], y * 32, 32, 32))
+                    self.tile_rects.append(pygame.Rect(x * 32, y * 32, 32, 32))
                 x += 1
             y += 1
 
@@ -111,7 +136,6 @@ class Player:
         hit_list = self.collision_check()
         for tile in hit_list:
             if self.vel[1] > 0:
-                #     Tu jest błąd lub nizej. Gdy kolizja jest z podłogą, a postać ma velocity nizsze od 0 to teleportuje postac ciagle  w lewa strone
                 self.player_location[1] = tile.top - self.player_size[1]
                 self.player_rect.y = self.player_location[1]
                 self.collision_types['bottom'] = True
@@ -128,8 +152,6 @@ class Player:
         return hit_list
 
     def move(self):
-        print('1loc:', self.player_location[0])
-        print('1:', self.vel[0])
         # Input
         pressed = pygame.key.get_pressed()
         if pressed[pygame.K_d]:
@@ -149,6 +171,7 @@ class Player:
 
         if not self.on_jump:
             if pressed[pygame.K_w]:
+                self.jump_sound.play()
                 self.on_jump = True
                 self.right = False
                 self.left = False
@@ -166,8 +189,10 @@ class Player:
             if self.collision_types['bottom']:
                 self.vel[0] *= self.friction
 
-
+        # Collision tiles
+        self.tiles()
         # Collision with game map tiles
+        # self.camera_scroll += Vector2(self.player_rect.x - self.camera_scroll[0] - 150, 0)
         self.map_collision()
 
         # Check if player on_jump
@@ -176,7 +201,6 @@ class Player:
                 self.on_jump = True
         if self.on_jump:
             if self.collision_types['bottom']:
-                # Zamiana na ground point lub collision check
                 self.on_jump = False
 
             # Postać przyspiesza po odbiciu i szybciej spada w dół
@@ -187,36 +211,14 @@ class Player:
                     self.vel += Vector2(-2, 0)
                 self.vel = Vector2(0, 5)
 
-        # Staying on the ground - player don't fall under the screen
-        # if self.player_rect.y > self.game.height - self.player_size[1]:
-        #     self.player_rect.y = self.game.height - self.player_size[1]
-        #     self.on_jump = False
 
-        # if self.player_location[1] > self.game.height - self.player_size[1]:
-        #     self.player_location[1] = self.game.height - self.player_size[1]
-        #     self.on_jump = False
-
-        # Player hitbox position
-        # self.player_rect.x = self.player_location[0]
-        # self.player_rect.y = self.player_location[1]
-
-        # Player position after collision check
-        self.tiles()
-        # self.player_location = Vector2(self.player_rect.x, self.player_rect.y)
+        # Rect position after collision check
         self.player_rect.x = self.player_location[0]
         self.player_rect.y = self.player_location[1]
-        print('3loc:', self.player_location[0])
-        print('3:', self.vel[0])
 
     def draw(self):
         # Drawing player hitbox
-        pygame.draw.rect(self.game.screen, (50, 55, 10), self.player_rect)
-
-        # Drawing test hitbox
-        # if self.player_rect.colliderect(self.test_rect):
-        #     pygame.draw.rect(self.game.screen, (255, 0, 0), self.test_rect)
-        # else:
-        #     pygame.draw.rect(self.game.screen, (0, 255, 0), self.test_rect)
+        # pygame.draw.rect(self.game.screen, (50, 55, 10), self.player_rect)
 
         # Drawing player on screen
         if self.walk_count + 1 >= 27:
@@ -224,25 +226,25 @@ class Player:
 
         if self.left:
             self.game.screen.blit(self.walk_left[self.walk_count // 3],
-                                  (self.player_location[0], self.player_location[1]))
+                                  (self.player_location[0]-self.camera_scroll[0], self.player_location[1]-self.camera_scroll[1]))
             self.walk_count += 1
         elif self.right:
             self.game.screen.blit(self.walk_right[self.walk_count // 3],
-                                  (self.player_location[0], self.player_location[1]))
+                                  (self.player_location[0]-self.camera_scroll[0], self.player_location[1]-self.camera_scroll[1]))
             self.walk_count += 1
         elif self.on_jump:
-            self.game.screen.blit(self.character, (self.player_location[0], self.player_location[1]))
+            self.game.screen.blit(self.character, (self.player_location[0]-self.camera_scroll[0], self.player_location[1]-self.camera_scroll[1]))
         else:
-            self.game.screen.blit(self.character, (self.player_location[0], self.player_location[1]))
+            self.game.screen.blit(self.character, (self.player_location[0]-self.camera_scroll[0], self.player_location[1]-self.camera_scroll[1]))
 
         y = 0
         for layer in self.game_map:
             x = 0
             for tile in layer:
                 if tile == '1':
-                    self.game.screen.blit(self.dirt_img, (x*32-self.camera_scroll[0], y*32))
+                    self.game.screen.blit(self.dirt_img, (x*32-self.camera_scroll[0], y*32-self.camera_scroll[1]))
                 if tile == '2':
-                    self.game.screen.blit(self.grass_img, (x*32-self.camera_scroll[0], y*32))
+                    self.game.screen.blit(self.grass_img, (x*32-self.camera_scroll[0], y*32-self.camera_scroll[1]))
                 x += 1
             y += 1
 
@@ -256,6 +258,10 @@ class MagicBall:
         self.ball_max = self.player.player_size[0]//3
         self.ball_x = int(self.player.player_location[0] + self.player.player_size[0]//2)
         self.ball_y = int(self.player.player_location[1] + self.player.player_size[1]//2)
+        self.diameter = 20
+
+        self.ball_image = pygame.image.load('game_assets/ball.png')
+        self.ball_image = pygame.transform.scale(self.ball_image, (self.diameter, self.diameter))
 
         self.ball_load = False
 
@@ -268,6 +274,7 @@ class MagicBall:
 
     def draw(self):
         if self.ball_load:
-            self.ball_x = int(self.player.player_location[0] + self.player.player_size[0])
+            self.ball_x = int(self.player.player_location[0] + self.player.player_size[0]//2)
             self.ball_y = int(self.player.player_location[1] + self.player.player_size[1] // 2)
-            pygame.draw.circle(self.game.screen, (100, 5, 5), (self.ball_x, self.ball_y+self.ball_min//2), self.ball_min)
+            # pygame.draw.circle(self.game.screen, (100, 5, 5), (self.ball_x, self.ball_y+self.ball_min//2), self.ball_min)
+            self.game.screen.blit(self.ball_image, (self.ball_x-self.player.camera_scroll[0], self.ball_y-self.player.camera_scroll[1]))

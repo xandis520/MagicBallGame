@@ -25,6 +25,7 @@ class Game(object):
             Game()
 
         # Initialization
+        pygame.mixer.pre_init(44100, -16, 2, 512)
         pygame.init()
         self.resolution = (self.width, self.height)
         self.screen = pygame.display.set_mode(self.resolution)
@@ -33,6 +34,11 @@ class Game(object):
         self.game_map = GameMap(self)
         self.player = Player(self)
         self.magic_ball = MagicBall(self)
+
+        # Sounds
+        pygame.mixer.music.load('game_assets/sounds/game_sound.wav')
+        pygame.mixer.music.set_volume(0.3)
+        pygame.mixer.music.play(-1)
 
         # Run main loop
         self.run()
@@ -69,4 +75,5 @@ class Game(object):
         pygame.display.flip()
 
 
-Game()
+if __name__ == "__main__":
+    Game()
