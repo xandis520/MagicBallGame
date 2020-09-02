@@ -1,7 +1,6 @@
 import pygame
 from pygame.math import Vector2
 import os
-from game_map import GameMap
 import math
 
 
@@ -205,11 +204,11 @@ class MagicBall:
 
         self.ball_image = pygame.image.load('game_assets/ball.png')
         self.ball_size = [20, 20]
-        self.ball_image = pygame.transform.scale(self.ball_image, (self.ball_size[0], self.ball_size[1]))
+        # self.ball_image = pygame.transform.scale(self.ball_image, (self.ball_size[0], self.ball_size[1]))
         self.ball_load = False
 
         self.mouse_pos = (0, 0)
-        self.radius = 20
+        self.radius = 40
         self.aA = self.ball_y0 - self.mouse_pos[1]  # Y axis
         self.bA = self.ball_x0 - self.mouse_pos[1]  # X axis
         self.R = math.sqrt(self.aA**2 + self.bA**2)
@@ -219,6 +218,7 @@ class MagicBall:
         self.xB = self.ball_x0 + self.bB
 
         self.ball_rect = pygame.Rect(self.xB, self.yB, self.ball_size[0], self.ball_size[1])
+        self.size_count = 0
 
     def map_collision(self):
         self.collision_types = {'top': False, 'bottom': False, 'right': False, 'left': False}
@@ -262,20 +262,28 @@ class MagicBall:
             self.aB = self.radius * self.aA / self.R
             self.xB = self.ball_x0 - self.bB - self.ball_size[0]//2
             self.yB = self.ball_y0 - self.aB - self.ball_size[1]//2
+            if self.size_count >= 2:
+                self.ball_size[0] += 1
+                self.ball_size[1] += 1
+                self.size_count = 0
+                if self.ball_size[0] >= 60:
+                    self.ball_size = [20, 20]
+                    # Throw ball
+            else:
+                self.size_count += 1
 
-            if self.ball_size[0] <= 50:
-                pass
-                # self.ball_size[0] += 0.1
-                # self.ball_size[1] += 0.1
-
-        else:
+        elif self.ball_load:
+            if pressed[pygame.MOUSEBUTTONDOWN]:
+                print('Throw')
+            # Throw ball function here
+            self.ball_size = [20, 20]
             # self.ball_size = [20, 20]
             self.ball_load = False
 
     def draw(self):
         if self.ball_load:
+            ball_copy = self.ball_image.copy()
+            ball_copy = pygame.transform.scale(ball_copy, (self.ball_size[0], self.ball_size[1]))
             # pygame.draw.circle(self.game.screen, (100, 5, 5), (self.ball_x, self.ball_y+self.ball_min//2), self.ball_min)
-            self.game.screen.blit(self.ball_image, (self.xB-self.player.camera_scroll[0], self.yB-self.player.camera_scroll[1]))
-            self.ball_size[0] += 1
-            self.ball_size[1] += 1
-            self.ball_image = pygame.transform.scale(self.ball_image, (int(self.ball_size[0]), int(self.ball_size[1])))
+            self.game.screen.blit(ball_copy, (self.xB-self.player.camera_scroll[0], self.yB-self.player.camera_scroll[1]))
+            # self.ball_image = pygame.transform.scale(self.ball_image, (int(self.ball_size[0]), int(self.ball_size[1])))
