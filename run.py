@@ -69,7 +69,7 @@ class Game(object):
 
     def draw(self):
         self.screen.blit(self.background, (0, 0))
-        # self.game_map.draw(self.player.camera_scroll) # tutaj trzeba przekazac wartosc self.player.camera_scroll
+        self.game_map.draw(self.player.camera_scroll) # tutaj trzeba przekazac wartosc self.player.camera_scroll
         self.player.draw()
         self.magic_ball.draw()
         pygame.display.flip()
