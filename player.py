@@ -97,13 +97,6 @@ class Player:
                 self.player_rect.y = self.player_location[1]
                 self.collision_types['top'] = True
 
-    # def collision_check(self):
-    #     hit_list = []
-    #     for tile in self.tile_rects:
-    #         if self.player_rect.colliderect(tile):
-    #             hit_list.append(tile)
-    #     return hit_list
-
     def move(self):
         # Input
         pressed = pygame.key.get_pressed()
@@ -142,10 +135,6 @@ class Player:
             if self.collision_types['bottom']:
                 self.vel[0] *= self.friction
 
-        # Collision tiles
-        # self.tiles()
-        # Collision with game map tiles
-        # self.camera_scroll += Vector2(self.player_rect.x - self.camera_scroll[0] - 150, 0)
         self.map_collision()
 
         # Check if player on_jump
@@ -163,7 +152,6 @@ class Player:
                 if self.right:
                     self.vel += Vector2(-2, 0)
                 self.vel = Vector2(0, 5)
-
 
         # Rect position after collision check
         self.player_rect.x = self.player_location[0]
@@ -209,15 +197,22 @@ class MagicBall:
 
         self.mouse_pos = (0, 0)
         self.radius = 40
-        self.aA = self.ball_y0 - self.mouse_pos[1]  # Y axis
-        self.bA = self.ball_x0 - self.mouse_pos[1]  # X axis
-        self.R = math.sqrt(self.aA**2 + self.bA**2)
+        self.aA = self.ball_x0 - self.mouse_pos[0] - self.player.camera_scroll[0]  # X axis
+        self.bA = self.ball_y0 - self.mouse_pos[1] - self.player.camera_scroll[1]  # Y axis
+        self.R = math.sqrt(self.aA ** 2 + self.bA ** 2)
         self.aB = self.radius * self.aA / self.R
         self.bB = self.radius * self.bA / self.R
-        self.yB = self.ball_y0 + self.aB
-        self.xB = self.ball_x0 + self.bB
+        self.xB = self.ball_x0 - self.aB - self.ball_size[0] // 2
+        self.yB = self.ball_y0 - self.bB - self.ball_size[1] // 2
+        self.ball_position = [self.xB, self.yB]
 
-        self.ball_rect = pygame.Rect(self.xB, self.yB, self.ball_size[0], self.ball_size[1])
+        # Throw ball
+        self.vector = Vector2(0, 0)
+        self.vel = Vector2(0, 0)
+        self.ball_throw = False
+        self.existing_time = 0
+
+        self.ball_rect = pygame.Rect(self.xB-self.ball_size[0]//2, self.yB-self.ball_size[1]//2, self.ball_size[0], self.ball_size[1])
         self.size_count = 0
 
     def map_collision(self):
@@ -248,42 +243,72 @@ class MagicBall:
                 self.player_rect.y = self.player_location[1]
                 self.collision_types['top'] = True
 
-    def tick(self):
-        pressed = pygame.key.get_pressed()
-        if pressed[pygame.K_SPACE]:
-            self.ball_load = True
-            self.ball_x0 = self.player.player_location[0] + self.player.player_size[0] // 2
-            self.ball_y0 = self.player.player_location[1] + self.player.player_size[1] // 2
-            self.mouse_pos = pygame.mouse.get_pos()
-            self.bA = self.ball_x0 - self.mouse_pos[0] - self.player.camera_scroll[0]  # X axis
-            self.aA = self.ball_y0 - self.mouse_pos[1] - self.player.camera_scroll[1]  # Y axis
-            self.R = math.sqrt(self.aA ** 2 + self.bA ** 2)
-            self.bB = self.radius * self.bA / self.R
-            self.aB = self.radius * self.aA / self.R
-            self.xB = self.ball_x0 - self.bB - self.ball_size[0]//2
-            self.yB = self.ball_y0 - self.aB - self.ball_size[1]//2
-            if self.size_count >= 2:
-                self.ball_size[0] += 1
-                self.ball_size[1] += 1
-                self.size_count = 0
-                if self.ball_size[0] >= 60:
-                    self.ball_size = [20, 20]
-                    # Throw ball
-            else:
-                self.size_count += 1
+    def ball_pos(self):
+        # Ball position
+        self.ball_x0 = self.player.player_location[0] + self.player.player_size[0] // 2
+        self.ball_y0 = self.player.player_location[1] + self.player.player_size[1] // 2
+        self.mouse_pos = pygame.mouse.get_pos()
+        self.aA = self.ball_x0 - self.mouse_pos[0] - self.player.camera_scroll[0]  # X axis
+        self.bA = self.ball_y0 - self.mouse_pos[1] - self.player.camera_scroll[1] # Y axis
+        self.R = math.sqrt(self.aA ** 2 + self.bA ** 2)
+        self.aB = self.radius * self.aA / self.R
+        self.bB = self.radius * self.bA / self.R
+        self.xB = self.ball_x0 - self.aB - self.ball_size[0] // 2
+        self.yB = self.ball_y0 - self.bB - self.ball_size[1] // 2
+        self.ball_position = [self.xB, self.yB]
 
-        elif self.ball_load:
-            if pressed[pygame.MOUSEBUTTONDOWN]:
-                print('Throw')
-            # Throw ball function here
-            self.ball_size = [20, 20]
-            # self.ball_size = [20, 20]
+    def throw(self):
+        # Throw vector
+        print(self.vel)
+        if self.existing_time <= 60:
+            self.vel[0] *= 0.98
+            self.vel += Vector2(0, self.player.gravity/4)
+            self.ball_position[0] += self.vel[0]
+            self.ball_position[1] += self.vel[1]
+            self.existing_time += 1
+        else:
+            self.existing_time = 0
+            self.ball_throw = False
             self.ball_load = False
+            self.ball_size = [20, 20]
+            self.ball_position = [self.xB, self.yB]
+
+    def size(self):
+        if self.size_count >= 2:
+            self.ball_size[0] += 1
+            self.ball_size[1] += 1
+            self.size_count = 0
+            if self.ball_size[0] >= 60:
+                # Throw ball
+                self.ball_throw = True
+                self.vel = Vector2(-self.aA / self.R, -self.bA / self.R) * 3
+                self.throw()
+        else:
+            self.size_count += 1
+
+    def tick(self):
+        print(self.ball_load, self.ball_throw)
+        pressed = pygame.key.get_pressed()
+        if not self.ball_throw:
+            if pressed[pygame.K_SPACE]:
+                self.ball_load = True
+                self.ball_pos()
+                self.size()
+            elif self.ball_load:
+                if pressed[pygame.MOUSEBUTTONDOWN]:
+                    print('Throw')
+                # Throw ball
+                self.ball_throw = True
+                self.ball_load = False
+                self.vel = Vector2(-self.aA / self.R, -self.bA / self.R) * 20
+                self.throw()
+        if self.ball_throw:
+            self.throw()
 
     def draw(self):
-        if self.ball_load:
+        if self.ball_load or self.ball_throw:
             ball_copy = self.ball_image.copy()
             ball_copy = pygame.transform.scale(ball_copy, (self.ball_size[0], self.ball_size[1]))
             # pygame.draw.circle(self.game.screen, (100, 5, 5), (self.ball_x, self.ball_y+self.ball_min//2), self.ball_min)
-            self.game.screen.blit(ball_copy, (self.xB-self.player.camera_scroll[0], self.yB-self.player.camera_scroll[1]))
+            self.game.screen.blit(ball_copy, (self.ball_position[0]-self.player.camera_scroll[0], self.ball_position[1]-self.player.camera_scroll[1]))
             # self.ball_image = pygame.transform.scale(self.ball_image, (int(self.ball_size[0]), int(self.ball_size[1])))
