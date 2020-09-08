@@ -5,7 +5,7 @@ import os
 class GameMap:
     def __init__(self, game):
         self.game = game
-        self.grass_img = pygame.image.load('game_assets/grass.png')
+        self.grass_img = pygame.image.load('game_assets/ground.png')
         self.grass_img = pygame.transform.scale(self.grass_img, (32, 32))
         self.dirt_img = pygame.image.load('game_assets/dirt.png')
         self.dirt_img = pygame.transform.scale(self.dirt_img, (32, 32))

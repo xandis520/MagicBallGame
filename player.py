@@ -15,6 +15,7 @@ class Player:
         self.player_image = pygame.transform.scale(self.player_image, (self.player_size[0], self.player_size[1]))
         start_x = (self.game.width - self.player_size[0])//2
         # start_y = self.game.height - self.player_size[1] - 50
+        start_x = 100
         start_y = 0
         self.player_location = [start_x, start_y] # Player run location
 
@@ -30,7 +31,7 @@ class Player:
         self.gravity = 1.3
         self.air_resistance = 0.9
         self.friction = 0.8
-        self.vel = Vector2(0, 0) # Parametr przechowujący aktualną prędkość obiektu (składowa wszystkich sił)
+        self.vel = Vector2(0, 0) # Parametr przechowujący aktualną prędkość obiektu (składowa wszystkich sił)`
         self.acceleration = Vector2(0, 0)
 
         #  Moving animation
@@ -214,34 +215,6 @@ class MagicBall:
 
         self.ball_rect = pygame.Rect(self.xB-self.ball_size[0]//2, self.yB-self.ball_size[1]//2, self.ball_size[0], self.ball_size[1])
         self.size_count = 0
-
-    def map_collision(self):
-        self.collision_types = {'top': False, 'bottom': False, 'right': False, 'left': False}
-        self.player_location[0] += self.vel[0]
-        self.player_rect.x = self.player_location[0]
-        hit_list = self.map.collision_check(self.player_rect)
-        for tile in hit_list:
-            if self.vel[0] > 0:
-                self.player_location[0] = tile.left - self.player_size[0]
-                self.player_rect.x = self.player_location[0]
-                self.collision_types['right'] = True
-            elif self.vel[0] < 0:
-                self.player_location[0] = tile.right
-                self.player_rect.x = self.player_location[0]
-                self.collision_types['left'] = True
-
-        self.player_location[1] += self.vel[1]
-        self.player_rect.y = self.player_location[1]
-        hit_list = self.map.collision_check(self.player_rect)
-        for tile in hit_list:
-            if self.vel[1] > 0:
-                self.player_location[1] = tile.top - self.player_size[1]
-                self.player_rect.y = self.player_location[1]
-                self.collision_types['bottom'] = True
-            elif self.vel[1] < 0:
-                self.player_location[1] = tile.bottom
-                self.player_rect.y = self.player_location[1]
-                self.collision_types['top'] = True
 
     def ball_pos(self):
         # Ball position
